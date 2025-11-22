@@ -1,54 +1,63 @@
-pipeline{
+pipeline {
     agent any
-    
-    tools{
+
+    tools {
         jdk 'java-11'
         maven 'maven'
     }
-    
-    stages{
-        stage('Git-checkout'){
-            steps{
-                git branch: 'main' , url: 'https://github.com/bgoudar25/Docker-Project.git
+
+    stages {
+
+        stage('Git Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/bgoudar25/Docker-Project.git'
             }
         }
-        stage('Code Compile'){
-            steps{
+
+        stage('Code Compile') {
+            steps {
                 sh 'mvn compile'
             }
         }
-        stage('Code Package'){
-            steps{
+
+        stage('Code Package') {
+            steps {
                 sh 'mvn clean install'
             }
         }
-        stage('Build and tag'){
-            steps{
-                sh 'docker build -t bgoudar25/Docker-Project.'
+
+        stage('Docker Build Image') {
+            steps {
+                sh 'docker build -t bgoudar/docker-project:latest .'
             }
         }
-        stage('Containerisation'){
-            steps{
+
+        stage('Run Container') {
+            steps {
                 sh '''
-                docker run -it -d --name c8 -p 9008:8080 bgoudar25/Docker-Project
+                    docker rm -f c8 || true
+                    docker run -d --name c8 -p 9008:8080 bgoudar/docker-project:latest
                 '''
             }
         }
-        stage('Login to Docker Hub') {
-                    steps {
-                        script {
-                            withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                                sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin"
-                            }
-                        }
+
+        stage('Docker Login') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                        sh 'echo "$PASS" | docker login -u "$USER" --password-stdin'
                     }
-        }
-         stage('Pushing image to repository'){
-            steps{
-                sh 'docker push bgoudar25/Docker-Project'
+                }
             }
         }
-        
-    }
 
+        stage('Push Image to Docker Hub') {
+            steps {
+                sh '''
+                    docker push bgoudar/docker-project:latest
+                '''
+            }
+        }
+
+    }
 }
