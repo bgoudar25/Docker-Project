@@ -53,11 +53,8 @@ pipeline {
 
         stage('Push Image to Docker Hub') {
             steps {
-                sh '''
-                    docker push bgoudar/docker-project:latest
-                '''
+                sh 'docker push bgoudar/docker-project:latest'
             }
         }
-
     }
 }
